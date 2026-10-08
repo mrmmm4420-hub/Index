@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14181C">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>GearTrack — Vehicle Maintenance</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%2314181C'/%3E%3Ccircle cx='50' cy='50' r='30' fill='none' stroke='%23E8A33D' stroke-width='8'/%3E%3Ccircle cx='50' cy='50' r='6' fill='%23E8A33D'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#14181C;
+    --surface:#1E242B;
+    --surface-2:#262E37;
+    --surface-3:#2E3742;
+    --text:#ECEEF0;
+    --text-dim:#8A94A0;
+    --text-faint:#5B6570;
+    --accent:#E8A33D;
+    --accent-dim:#8A6B32;
+    --good:#4CAF7D;
+    --good-bg:rgba(76,175,125,0.14);
+    --warn:#E8A33D;
+    --warn-bg:rgba(232,163,61,0.14);
+    --danger:#E5534B;
+    --danger-bg:rgba(229,83,75,0.14);
+    --line:#2C333B;
+    --radius-s:10px;
+    --radius-m:16px;
+    --radius-l:22px;
+    --safe-top:env(safe-area-inset-top,0px);
+    --safe-bottom:env(safe-area-inset-bottom,0px);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    overscroll-behavior-y:none;
+    padding-top:var(--safe-top);
+    padding-bottom:var(--safe-bottom);
+  }
+  .num{font-family:"Space Grotesk",sans-serif;font-variant-numeric:tabular-nums;}
+  #app{max-width:480px;margin:0 auto;min-height:100dvh;display:flex;flex-direction:column;position:relative;}
+
+  /* ---------- Top bar ---------- */
+  .topbar{
+    position:sticky;top:0;z-index:20;
+    padding:calc(14px + var(--safe-top)) 20px 14px;
+    margin-top:calc(-1 * var(--safe-top));
+    background:linear-gradient(var(--bg) 78%, transparent);
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+  }
+  .brand{display:flex;align-items:center;gap:10px;}
+  .brand-mark{width:30px;height:30px;border-radius:9px;background:var(--surface-2);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .brand-title{font-family:"Space Grotesk";font-weight:600;font-size:17px;letter-spacing:0.2px;}
+  .veh-switch{
+    display:flex;align-items:center;gap:6px;background:var(--surface);
+    border:1px solid var(--line);border-radius:100px;padding:6px 12px 6px 8px;
+    font-size:13px;color:var(--text-dim);max-width:150px;
+  }
+  .veh-switch select{
+    background:transparent;border:none;color:var(--text);font-size:13px;font-weight:600;
+    -webkit-appearance:none;appearance:none;max-width:110px;font-family:inherit;
+  }
+  .veh-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex-shrink:0;}
+
+  /* ---------- Views ---------- */
+  .view{display:none;padding:0 20px 100px;flex:1;}
+  .view.active{display:block;}
+  .screen-title{font-family:"Space Grotesk";font-size:22px;font-weight:600;margin:6px 0 16px;}
+  .screen-sub{color:var(--text-dim);font-size:14px;margin:-12px 0 20px;line-height:1.5;}
+
+  /* ---------- Empty state ---------- */
+  .empty{
+    text-align:center;padding:48px 20px;color:var(--text-dim);
+    border:1px dashed var(--line);border-radius:var(--radius-l);
+  }
+  .empty-icon{font-size:34px;margin-bottom:10px;display:block;}
+  .empty h3{color:var(--text);font-family:"Space Grotesk";font-size:16px;margin:0 0 6px;}
+  .empty p{font-size:13.5px;margin:0 0 18px;line-height:1.5;}
+
+  /* ---------- Buttons ---------- */
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    border:none;border-radius:100px;font-family:"Inter";font-weight:600;font-size:14.5px;
+    padding:13px 22px;cursor:pointer;transition:transform .08s ease;
+  }
+  .btn:active{transform:scale(0.97);}
+  .btn-accent{background:var(--accent);color:#1A1305;}
+  .btn-ghost{background:var(--surface-2);color:var(--text);}
+  .btn-block{width:100%;}
+  .btn-sm{padding:9px 16px;font-size:13px;}
+  .btn-danger-outline{background:transparent;border:1px solid var(--danger);color:var(--danger);}
+
+  /* ---------- Vehicle gauge card (dashboard hero) ---------- */
+  .gauge-card{
+    background:radial-gradient(120% 140% at 15% 0%, #232B33 0%, var(--surface) 55%);
+    border:1px solid var(--line);border-radius:var(--radius-l);
+    padding:22px 20px;margin-bottom:16px;position:relative;overflow:hidden;
+  }
+  .gauge-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;}
+  .gauge-name{font-family:"Space Grotesk";font-size:19px;font-weight:600;}
+  .gauge-meta{color:var(--text-dim);font-size:12.5px;margin-top:3px;}
+  .status-chip{
+    font-size:11.5px;font-weight:700;padding:5px 10px;border-radius:100px;
+    display:flex;align-items:center;gap:5px;white-space:nowrap;
+  }
+  .status-chip .dot{width:6px;height:6px;border-radius:50%;}
+  .status-ok{background:var(--good-bg);color:var(--good);}
+  .status-ok .dot{background:var(--good);}
+  .status-soon{background:var(--warn-bg);color:var(--warn);}
+  .status-soon .dot{background:var(--warn);}
+  .status-over{background:var(--danger-bg);color:var(--danger);}
+  .status-over .dot{background:var(--danger);}
+
+  .gauge-row{display:flex;align-items:center;gap:20px;}
+  .gauge-ring{position:relative;width:98px;height:98px;flex-shrink:0;}
+  .gauge-ring svg{transform:rotate(-90deg);width:100%;height:100%;}
+  .gauge-ring-label{
+    position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  }
+  .gauge-ring-num{font-size:19px;font-weight:700;line-height:1;}
+  .gauge-ring-unit{font-size:9.5px;color:var(--text-dim);margin-top:2px;letter-spacing:.3px;}
+  .gauge-next{flex:1;}
+  .gauge-next-label{font-size:11.5px;color:var(--text-dim);margin-bottom:3px;}
+  .gauge-next-title{font-size:15px;font-weight:600;margin-bottom:2px;}
+  .gauge-next-sub{font-size:12.5px;color:var(--text-dim);}
+
+  .mini-expiry-row{display:flex;gap:10px;margin-top:16px;}
+  .mini-expiry{
+    flex:1;background:var(--surface-2);border-radius:var(--radius-s);padding:10px 12px;
+  }
+  .mini-expiry-label{font-size:10.5px;color:var(--text-dim);margin-bottom:3px;}
+  .mini-expiry-val{font-size:13px;font-weight:600;}
+
+  .card-tap-hint{
+    margin-top:16px;text-align:center;font-size:12.5px;color:var(--text-faint);
+    border-top:1px solid var(--line);padding-top:12px;
+  }
+
+  /* ---------- Section headers ---------- */
+  .section-head{display:flex;align-items:center;justify-content:space-between;margin:26px 0 12px;}
+  .section-head h4{font-family:"Space Grotesk";font-size:14.5px;font-weight:600;margin:0;color:var(--text-dim);}
+  .section-head a{font-size:12.5px;color:var(--accent);text-decoration:none;font-weight:600;}
+
+  /* ---------- Upcoming list ---------- */
+  .up-item{
+    display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);
+    border-radius:var(--radius-m);padding:13px 14px;margin-bottom:10px;
+  }
+  .up-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+  .up-body{flex:1;min-width:0;}
+  .up-title{font-size:14px;font-weight:600;}
+  .up-sub{font-size:12px;color:var(--text-dim);margin-top:2px;}
+  .up-veh{font-size:11px;color:var(--text-faint);margin-top:1px;}
+
+  /* ---------- Stat row ---------- */
+  .stat-row{display:flex;gap:10px;margin-top:16px;}
+  .stat-box{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-m);padding:14px;}
+  .stat-box .lbl{font-size:11px;color:var(--text-dim);margin-bottom:4px;}
+  .stat-box .val{font-size:19px;font-weight:700;}
+
+  /* ---------- Vehicles list ---------- */
+  .veh-card{
+    background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-m);
+    padding:16px;margin-bottom:12px;display:flex;align-items:center;gap:14px;cursor:pointer;
+  }
+  .veh-avatar{
+    width:46px;height:46px;border-radius:12px;background:var(--surface-3);display:flex;
+    align-items:center;justify-content:center;font-size:19px;flex-shrink:0;
+  }
+  .veh-card-body{flex:1;min-width:0;}
+  .veh-card-title{font-size:15.5px;font-weight:600;}
+  .veh-card-sub{font-size:12.5px;color:var(--text-dim);margin-top:2px;}
+  .chev{color:var(--text-faint);font-size:18px;}
+
+  .add-veh-card{
+    border:1px dashed var(--line);border-radius:var(--radius-m);padding:16px;
+    display:flex;align-items:center;justify-content:center;gap:8px;color:var(--accent);
+    font-weight:600;font-size:14px;cursor:pointer;margin-bottom:12px;
+  }
+
+  /* ---------- Forms ---------- */
+  .field{margin-bottom:16px;}
+  .field label{display:block;font-size:12.5px;color:var(--text-dim);margin-bottom:7px;font-weight:500;}
+  .field input, .field select, .field textarea{
+    width:100%;background:var(--surface-2);border:1px solid var(--line);color:var(--text);
+    border-radius:var(--radius-s);padding:13px 14px;font-size:15px;font-family:inherit;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus{outline:2px solid var(--accent);outline-offset:1px;}
+  .field textarea{resize:vertical;min-height:70px;}
+  .field-row{display:flex;gap:12px;}
+  .field-row .field{flex:1;}
+  .hint{font-size:11.5px;color:var(--text-faint);margin-top:6px;}
+
+  .cat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;}
+  .cat-opt{
+    border:1px solid var(--line);background:var(--surface);border-radius:var(--radius-m);
+    padding:13px;display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13.5px;font-weight:600;
+  }
+  .cat-opt.selected{border-color:var(--accent);background:var(--warn-bg);color:var(--accent);}
+  .cat-opt .ic{font-size:17px;}
+
+  /* ---------- History ---------- */
+  .hist-filter{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin-bottom:18px;scrollbar-width:none;}
+  .hist-filter::-webkit-scrollbar{display:none;}
+  .chip-btn{
+    flex-shrink:0;background:var(--surface);border:1px solid var(--line);color:var(--text-dim);
+    border-radius:100px;padding:8px 14px;font-size:12.5px;font-weight:600;cursor:pointer;
+  }
+  .chip-btn.active{background:var(--accent);border-color:var(--accent);color:#1A1305;}
+
+  .hist-item{
+    background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-m);
+    padding:14px 15px;margin-bottom:10px;
+  }
+  .hist-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;}
+  .hist-cat{display:flex;align-items:center;gap:9px;}
+  .hist-cat-title{font-size:14px;font-weight:600;}
+  .hist-cost{font-size:14.5px;font-weight:700;color:var(--accent);}
+  .hist-meta{font-size:12px;color:var(--text-dim);line-height:1.6;}
+  .hist-notes{font-size:12.5px;color:var(--text-dim);margin-top:7px;padding-top:7px;border-top:1px solid var(--line);}
+
+  /* ---------- Bottom nav ---------- */
+  .bottomnav{
+    position:sticky;bottom:0;z-index:30;
+    display:flex;background:rgba(30,36,43,0.92);backdrop-filter:blur(14px);
+    border-top:1px solid var(--line);padding:8px 8px calc(8px + var(--safe-bottom));
+    max-width:480px;margin:0 auto;width:100%;
+  }
+  .navbtn{
+    flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+    background:none;border:none;color:var(--text-faint);font-size:10.5px;font-weight:600;
+    padding:6px 0;cursor:pointer;font-family:"Inter";
+  }
+  .navbtn .ic{font-size:19px;}
+  .navbtn.active{color:var(--accent);}
+
+  .fab-add{
+    background:var(--accent);color:#1A1305;width:46px;height:46px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;font-size:24px;margin-top:-14px;
+    box-shadow:0 6px 18px rgba(232,163,61,0.35);border:4px solid var(--bg);
+  }
+
+  /* ---------- Modal / sheet ---------- */
+  .sheet-backdrop{
+    position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:40;display:none;
+    align-items:flex-end;justify-content:center;
+  }
+  .sheet-backdrop.open{display:flex;}
+  .sheet{
+    background:var(--bg);width:100%;max-width:480px;max-height:88dvh;overflow-y:auto;
+    border-radius:22px 22px 0 0;padding:20px 20px calc(24px + var(--safe-bottom));
+    animation:slideup .22s ease;
+  }
+  @keyframes slideup{from{transform:translateY(24px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+  .sheet-handle{width:36px;height:4px;background:var(--line);border-radius:4px;margin:0 auto 16px;}
+  .sheet-title{font-family:"Space Grotesk";font-size:18px;font-weight:600;margin-bottom:16px;}
+  .sheet-close{position:absolute;top:18px;right:18px;background:var(--surface-2);border:none;color:var(--text-dim);width:30px;height:30px;border-radius:50%;font-size:15px;cursor:pointer;}
+
+  /* ---------- Toast ---------- */
+  .toast{
+    position:fixed;bottom:calc(90px + var(--safe-bottom));left:50%;transform:translateX(-50%) translateY(10px);
+    background:var(--surface-3);color:var(--text);padding:12px 20px;border-radius:100px;font-size:13.5px;
+    font-weight:600;z-index:60;opacity:0;transition:all .25s ease;pointer-events:none;box-shadow:0 8px 24px rgba(0,0,0,0.35);
+    max-width:88%;text-align:center;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  /* ---------- Reminder banner ---------- */
+  .banner{
+    background:var(--warn-bg);border:1px solid var(--accent-dim);border-radius:var(--radius-m);
+    padding:14px 15px;margin-bottom:16px;display:flex;align-items:center;gap:12px;
+  }
+  .banner .ic{font-size:20px;flex-shrink:0;}
+  .banner-text{flex:1;font-size:13px;line-height:1.4;}
+  .banner-text b{display:block;font-size:13.5px;margin-bottom:1px;}
+  .banner-close{background:none;border:none;color:var(--text-dim);font-size:16px;cursor:pointer;padding:4px;}
+
+  .install-tip{
+    background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-m);
+    padding:14px 15px;margin-bottom:16px;font-size:12.5px;color:var(--text-dim);line-height:1.6;
+  }
+  .install-tip b{color:var(--text);}
+
+  ::-webkit-scrollbar{width:0;height:0;}
+  select{color-scheme:dark;}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div class="topbar" id="topbar">
+    <div class="brand">
+      <div class="brand-mark">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8" stroke="#E8A33D" stroke-width="2.2"/><circle cx="12" cy="12" r="2" fill="#E8A33D"/><path d="M12 4V2M12 22v-2M20 12h2M2 12h2" stroke="#E8A33D" stroke-width="2.2" stroke-linecap="round"/></svg>
+      </div>
+      <div class="brand-title">GearTrack</div>
+    </div>
+    <div class="veh-switch" id="vehSwitchWrap" style="display:none;">
+      <span class="veh-dot"></span>
+      <select id="vehSwitch" onchange="setActiveVehicle(this.value)"></select>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="view active" id="view-dashboard">
+    <div id="dashContent"></div>
+  </div>
+
+  <!-- VEHICLES -->
+  <div class="view" id="view-vehicles">
+    <div class="screen-title">Your vehicles</div>
+    <div id="vehList"></div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="view" id="view-history">
+    <div class="screen-title">Maintenance history</div>
+    <div id="historyContent"></div>
+  </div>
+
+  <!-- ADD RECORD -->
+  <div class="view" id="view-add">
+    <div class="screen-title">Log maintenance</div>
+    <div id="addContent"></div>
+  </div>
+
+  <div class="bottomnav">
+    <button class="navbtn active" data-view="dashboard" onclick="switchView('dashboard')">
+      <span class="ic">⌂</span>Dashboard
+    </button>
+    <button class="navbtn" data-view="vehicles" onclick="switchView('vehicles')">
+      <span class="ic">🚗</span>Vehicles
+    </button>
+    <button class="navbtn" data-view="add" onclick="switchView('add')" style="flex:0.9;">
+      <div class="fab-add">+</div>
+    </button>
+    <button class="navbtn" data-view="history" onclick="switchView('history')">
+      <span class="ic">🕘</span>History
+    </button>
+    <button class="navbtn" data-view="settings" onclick="openSettings()">
+      <span class="ic">⚙</span>Settings
+    </button>
+  </div>
+</div>
+
+<div class="sheet-backdrop" id="sheetBackdrop" onclick="if(event.target===this)closeSheet()">
+  <div class="sheet" id="sheet"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   GEARTRACK — local-first vehicle maintenance tracker
+   Data lives entirely in localStorage on this device.
+   ============================================================ */
+
+const STORAGE_KEY = 'geartrack_v1';
+
+const CATEGORIES = {
+  engine_oil:      { label:'Engine oil',        icon:'🛢️', defKm:5000,  defMonths:6  },
+  trans_oil:       { label:'Transmission oil',  icon:'⚙️', defKm:40000, defMonths:24 },
+  filters:         { label:'Filters',           icon:'🌬️', defKm:10000, defMonths:12 },
+  battery:         { label:'Battery',           icon:'🔋', defKm:30000, defMonths:24 },
+  tires:           { label:'Tires',             icon:'🛞', defKm:40000, defMonths:48 },
+  brakes:          { label:'Brake system',      icon:'🛑', defKm:20000, defMonths:24 },
+  coolant:         { label:'Coolant',           icon:'❄️', defKm:40000, defMonths:24 },
+  other:           { label:'Other maintenance', icon:'🔧', defKm:null,  defMonths:null }
+};
+
+function loadData(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw) return JSON.parse(raw);
+  }catch(e){}
+  return { vehicles:[], records:[], activeVehicleId:null, notifPromptSeen:false };
+}
+function saveData(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(DATA)); }
+
+let DATA = loadData();
+let currentView = 'dashboard';
+
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._h);
+  t._h = setTimeout(()=>t.classList.remove('show'), 2400);
+}
+
+/* ---------------- Sheet (bottom modal) helpers ---------------- */
+function openSheet(html){
+  document.getElementById('sheet').innerHTML = html;
+  document.getElementById('sheetBackdrop').classList.add('open');
+}
+function closeSheet(){
+  document.getElementById('sheetBackdrop').classList.remove('open');
+}
+
+/* ---------------- View switching ---------------- */
+function switchView(v){
+  currentView = v;
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
+  document.getElementById('view-'+v).classList.add('active');
+  document.querySelectorAll('.navbtn').forEach(b=>b.classList.toggle('active', b.dataset.view===v));
+  if(v==='dashboard') renderDashboard();
+  if(v==='vehicles') renderVehicles();
+  if(v==='history') renderHistory();
+  if(v==='add') renderAdd();
+  window.scrollTo(0,0);
+}
+
+/* ---------------- Vehicle switcher (topbar) ---------------- */
+function refreshVehSwitch(){
+  const wrap = document.getElementById('vehSwitchWrap');
+  const sel = document.getElementById('vehSwitch');
+  if(DATA.vehicles.length===0){ wrap.style.display='none'; return; }
+  wrap.style.display='flex';
+  sel.innerHTML = DATA.vehicles.map(v=>`<option value="${v.id}" ${v.id===DATA.activeVehicleId?'selected':''}>${escapeHtml(v.name)}</option>`).join('');
+}
+function setActiveVehicle(id){
+  DATA.activeVehicleId = id;
+  saveData();
+  renderDashboard();
+}
+
+/* ---------------- Date / interval math ---------------- */
+function daysBetween(a,b){ return Math.round((b-a)/86400000); }
+function monthsFromNow(months){ const d=new Date(); d.setMonth(d.getMonth()+months); return d; }
+function fmtDate(d){
+  if(!d) return '—';
+  const dt = (d instanceof Date)? d : new Date(d);
+  if(isNaN(dt)) return '—';
+  return dt.toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'});
+}
+function fmtNum(n){ return Math.round(n).toLocaleString(); }
+
+// Records for a vehicle+category, most recent first
+function recordsFor(vehId, cat){
+  return DATA.records.filter(r=>r.vehicleId===vehId && (!cat || r.category===cat))
+    .sort((a,b)=> new Date(b.date)-new Date(a.date));
+}
+
+function getIntervals(vehId, cat){
+  const v = DATA.vehicles.find(x=>x.id===vehId);
+  const custom = v && v.intervals && v.intervals[cat];
+  const def = CATEGORIES[cat];
+  return {
+    km: custom && custom.km!=null ? custom.km : def.defKm,
+    months: custom && custom.months!=null ? custom.months : def.defMonths
+  };
+}
+
+// Compute next-due status for one category on one vehicle
+function categoryStatus(veh, cat){
+  const recs = recordsFor(veh.id, cat);
+  const last = recs[0];
+  const iv = getIntervals(veh.id, cat);
+  if(!last || (iv.km==null && iv.months==null)){
+    return { hasData:!!last, dueKm:null, dueDate:null, status:'none', last };
+  }
+  const dueKm = iv.km!=null ? last.mileage + iv.km : null;
+  const dueDate = iv.months!=null ? (()=>{ const d=new Date(last.date); d.setMonth(d.getMonth()+iv.months); return d; })() : null;
+
+  const kmLeft = dueKm!=null ? dueKm - veh.mileage : Infinity;
+  const daysLeft = dueDate!=null ? daysBetween(new Date(), dueDate) : Infinity;
+
+  let status = 'ok';
+  if(kmLeft<=0 || daysLeft<=0) status='over';
+  else if(kmLeft<=800 || daysLeft<=21) status='soon';
+
+  return { hasData:true, dueKm, dueDate, kmLeft, daysLeft, status, last, iv };
+}
+
+function allCategoryStatuses(veh){
+  return Object.keys(CATEGORIES).map(cat=>({ cat, ...categoryStatus(veh,cat) }));
+}
+
+function vehicleOverallStatus(veh){
+  const all = allCategoryStatuses(veh).filter(s=>s.hasData);
+  if(all.some(s=>s.status==='over')) return 'over';
+  if(all.some(s=>s.status==='soon')) return 'soon';
+  if(all.length===0) return 'none';
+  return 'ok';
+}
+
+function nextDueForVehicle(veh){
+  const all = allCategoryStatuses(veh).filter(s=>s.hasData && s.status!=='none');
+  if(all.length===0) return null;
+  all.sort((a,b)=>{
+    const aScore = Math.min(a.kmLeft??Infinity, (a.daysLeft??Infinity)*40); // rough weight km vs days
+    const bScore = Math.min(b.kmLeft??Infinity, (b.daysLeft??Infinity)*40);
+    return aScore-bScore;
+  });
+  return all[0];
+}
+
+function healthPercent(veh){
+  const all = allCategoryStatuses(veh).filter(s=>s.hasData);
+  if(all.length===0) return 100;
+  let score = 0;
+  all.forEach(s=>{
+    if(s.status==='ok') score+=100;
+    else if(s.status==='soon') score+=55;
+    else score+=15;
+  });
+  return Math.round(score/all.length);
+}
+
+function daysUntil(dateStr){
+  if(!dateStr) return null;
+  return daysBetween(new Date(), new Date(dateStr));
+}
+
+/* ---------------- Dashboard ---------------- */
+function renderDashboard(){
+  refreshVehSwitch();
+  const el = document.getElementById('dashContent');
+  if(DATA.vehicles.length===0){
+    el.innerHTML = `
+      <div class="empty">
+        <span class="empty-icon">🚗</span>
+        <h3>Add your first vehicle</h3>
+        <p>Track mileage, expiry dates and maintenance in one place.</p>
+        <button class="btn btn-accent" onclick="openAddVehicleSheet()">Add a vehicle</button>
+      </div>`;
+    return;
+  }
+  if(!DATA.activeVehicleId || !DATA.vehicles.find(v=>v.id===DATA.activeVehicleId)){
+    DATA.activeVehicleId = DATA.vehicles[0].id; saveData();
+  }
+  const veh = DATA.vehicles.find(v=>v.id===DATA.activeVehicleId);
+  const overall = vehicleOverallStatus(veh);
+  const health = healthPercent(veh);
+  const next = nextDueForVehicle(veh);
+
+  const overdueList = allCategoryStatuses(veh).filter(s=>s.hasData && (s.status==='over'||s.status==='soon'))
+    .sort((a,b)=> (a.status==='over'?-1:1) - (b.status==='over'?-1:1));
+
+  const regDays = daysUntil(veh.regExpiry);
+  const insDays = daysUntil(veh.insExpiry);
+
+  const statusLabel = { ok:'On track', soon:'Due soon', over:'Overdue', none:'No records yet' }[overall];
+  const statusClass = { ok:'status-ok', soon:'status-soon', over:'status-over', none:'status-ok' }[overall];
+
+  const ringColor = overall==='over' ? 'var(--danger)' : overall==='soon' ? 'var(--warn)' : 'var(--good)';
+  const circumference = 2*Math.PI*40;
+  const dash = circumference*(health/100);
+
+  let html = `
+    ${(regDays!=null && regDays<=30) || (insDays!=null && insDays<=30) ? renderExpiryBanner(veh, regDays, insDays) : ''}
+    <div class="gauge-card">
+      <div class="gauge-top">
+        <div>
+          <div class="gauge-name">${escapeHtml(veh.name)}</div>
+          <div class="gauge-meta num">${fmtNum(veh.mileage)} km · added ${fmtDate(veh.purchaseDate)}</div>
+        </div>
+        <div class="status-chip ${statusClass}"><span class="dot"></span>${statusLabel}</div>
+      </div>
+      <div class="gauge-row">
+        <div class="gauge-ring">
+          <svg viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="40" fill="none" stroke="var(--surface-3)" stroke-width="9"/>
+            <circle cx="50" cy="50" r="40" fill="none" stroke="${ringColor}" stroke-width="9"
+              stroke-linecap="round" stroke-dasharray="${dash} ${circumference}"/>
+          </svg>
+          <div class="gauge-ring-label">
+            <div class="gauge-ring-num num">${health}%</div>
+            <div class="gauge-ring-unit">healthy</div>
+          </div>
+        </div>
+        <div class="gauge-next">
+          ${next ? `
+            <div class="gauge-next-label">Next up</div>
+            <div class="gauge-next-title">${CATEGORIES[next.cat].icon} ${CATEGORIES[next.cat].label}</div>
+            <div class="gauge-next-sub">${dueSummary(next)}</div>
+          ` : `
+            <div class="gauge-next-label">Get started</div>
+            <div class="gauge-next-title">Log your first service</div>
+            <div class="gauge-next-sub">We'll calculate what's due next.</div>
+          `}
+        </div>
+      </div>
+      <div class="mini-expiry-row">
+        <div class="mini-expiry">
+          <div class="mini-expiry-label">Registration</div>
+          <div class="mini-expiry-val" style="color:${expiryColor(regDays)}">${veh.regExpiry ? fmtDate(veh.regExpiry) : 'Not set'}</div>
+        </div>
+        <div class="mini-expiry">
+          <div class="mini-expiry-label">Insurance</div>
+          <div class="mini-expiry-val" style="color:${expiryColor(insDays)}">${veh.insExpiry ? fmtDate(veh.insExpiry) : 'Not set'}</div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  html += `
+    <div class="section-head"><h4>Upcoming maintenance</h4></div>
+  `;
+  if(overdueList.length===0){
+    html += `<div class="empty" style="padding:28px 16px;"><span class="empty-icon">✅</span><h3>Nothing due right now</h3><p>You'll see alerts here as service dates approach.</p></div>`;
+  }else{
+    html += overdueList.map(s=>{
+      const cat = CATEGORIES[s.cat];
+      const bg = s.status==='over' ? 'var(--danger-bg)' : 'var(--warn-bg)';
+      return `
+      <div class="up-item">
+        <div class="up-icon" style="background:${bg}">${cat.icon}</div>
+        <div class="up-body">
+          <div class="up-title">${cat.label}</div>
+          <div class="up-sub">${dueSummary(s)}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  const yearCost = yearlyMaintenanceCost(veh.id);
+  html += `
+    <div class="section-head"><h4>This year</h4></div>
+    <div class="stat-row">
+      <div class="stat-box">
+        <div class="lbl">Total spent</div>
+        <div class="val num">${fmtCurrency(yearCost)}</div>
+      </div>
+      <div class="stat-box">
+        <div class="lbl">Services logged</div>
+        <div class="val num">${recordsFor(veh.id).length}</div>
+      </div>
+    </div>
+  `;
+
+  el.innerHTML = html;
+}
+
+function renderExpiryBanner(veh, regDays, insDays){
+  let items = [];
+  if(regDays!=null && regDays<=30) items.push(`registration ${regDays<0?'expired':'expires in '+regDays+' days'}`);
+  if(insDays!=null && insDays<=30) items.push(`insurance ${insDays<0?'expired':'expires in '+insDays+' days'}`);
+  return `
+    <div class="banner">
+      <div class="ic">⚠️</div>
+      <div class="banner-text"><b>Action needed</b>${items.join(' · ')}</div>
+    </div>`;
+}
+
+function expiryColor(days){
+  if(days==null) return 'var(--text)';
+  if(days<0) return 'var(--danger)';
+  if(days<=30) return 'var(--warn)';
+  return 'var(--text)';
+}
+
+function dueSummary(s){
+  const parts = [];
+  if(s.kmLeft!=null && isFinite(s.kmLeft)){
+    parts.push(s.kmLeft<=0 ? `${fmtNum(Math.abs(s.kmLeft))} km overdue` : `due in ${fmtNum(s.kmLeft)} km`);
+  }
+  if(s.daysLeft!=null && isFinite(s.daysLeft)){
+    parts.push(s.daysLeft<=0 ? `${Math.abs(s.daysLeft)} days overdue` : `${s.daysLeft} days left`);
+  }
+  return parts.join(' · ') || 'Schedule not set';
+}
+
+function yearlyMaintenanceCost(vehId){
+  const y = new Date().getFullYear();
+  return DATA.records.filter(r=>r.vehicleId===vehId && new Date(r.date).getFullYear()===y)
+    .reduce((sum,r)=>sum+(Number(r.cost)||0),0);
+}
+function fmtCurrency(n){
+  return (DATA.settings && DATA.settings.currency ? DATA.settings.currency : '$') + fmtNum(n);
+}
+
+/* ---------------- Vehicles list ---------------- */
+function renderVehicles(){
+  const el = document.getElementById('vehList');
+  let html = `<div class="add-veh-card" onclick="openAddVehicleSheet()">+ &nbsp;Add a vehicle</div>`;
+  if(DATA.vehicles.length===0){
+    html += `<div class="empty"><span class="empty-icon">🚗</span><h3>No vehicles yet</h3><p>Add one to start tracking maintenance.</p></div>`;
+  }else{
+    html += DATA.vehicles.map(v=>{
+      const overall = vehicleOverallStatus(v);
+      const icon = overall==='over' ? '🔴' : overall==='soon' ? '🟡' : '🟢';
+      return `
+      <div class="veh-card" onclick="openVehicleDetail('${v.id}')">
+        <div class="veh-avatar">🚗</div>
+        <div class="veh-card-body">
+          <div class="veh-card-title">${escapeHtml(v.name)}</div>
+          <div class="veh-card-sub num">${icon} ${fmtNum(v.mileage)} km</div>
+        </div>
+        <div class="chev">›</div>
+      </div>`;
+    }).join('');
+  }
+  el.innerHTML = html;
+}
+
+function openAddVehicleSheet(edit){
+  const v = edit ? DATA.vehicles.find(x=>x.id===edit) : null;
+  openSheet(`
+    <button class="sheet-close" onclick="closeSheet()">✕</button>
+    <div class="sheet-title">${v?'Edit vehicle':'Add a vehicle'}</div>
+    <div class="field">
+      <label>Vehicle name</label>
+      <input id="f_name" placeholder="e.g. Honda Civic 2019" value="${v?escapeHtml(v.name):''}">
+    </div>
+    <div class="field">
+      <label>Current mileage (km)</label>
+      <input id="f_mileage" type="number" inputmode="numeric" placeholder="e.g. 42000" value="${v?v.mileage:''}">
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Purchase date</label>
+        <input id="f_purchase" type="date" value="${v?v.purchaseDate||'':''}">
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Registration expiry</label>
+        <input id="f_reg" type="date" value="${v?v.regExpiry||'':''}">
+      </div>
+      <div class="field">
+        <label>Insurance expiry</label>
+        <input id="f_ins" type="date" value="${v?v.insExpiry||'':''}">
+      </div>
+    </div>
+    <button class="btn btn-accent btn-block" onclick="saveVehicle('${v?v.id:''}')">${v?'Save changes':'Add vehicle'}</button>
+    ${v?`<button class="btn btn-danger-outline btn-block" style="margin-top:10px;" onclick="deleteVehicle('${v.id}')">Delete vehicle</button>`:''}
+  `);
+}
+
+function saveVehicle(id){
+  const name = document.getElementById('f_name').value.trim();
+  const mileage = Number(document.getElementById('f_mileage').value)||0;
+  const purchaseDate = document.getElementById('f_purchase').value;
+  const regExpiry = document.getElementById('f_reg').value;
+  const insExpiry = document.getElementById('f_ins').value;
+  if(!name){ toast('Give this vehicle a name'); return; }
+
+  if(id){
+    const v = DATA.vehicles.find(x=>x.id===id);
+    Object.assign(v, {name, mileage, purchaseDate, regExpiry, insExpiry});
+    toast('Vehicle updated');
+  }else{
+    const v = { id:uid(), name, mileage, purchaseDate, regExpiry, insExpiry, intervals:{} };
+    DATA.vehicles.push(v);
+    if(!DATA.activeVehicleId) DATA.activeVehicleId = v.id;
+    toast('Vehicle added');
+  }
+  saveData();
+  closeSheet();
+  renderVehicles();
+  renderDashboard();
+  scheduleReminders();
+}
+
+function deleteVehicle(id){
+  openSheet(`
+    <div class="sheet-title">Delete this vehicle?</div>
+    <p style="color:var(--text-dim);font-size:13.5px;line-height:1.5;">This removes the vehicle and all of its maintenance history. This can't be undone.</p>
+    <button class="btn btn-danger-outline btn-block" onclick="confirmDeleteVehicle('${id}')">Delete permanently</button>
+    <button class="btn btn-ghost btn-block" style="margin-top:10px;" onclick="closeSheet()">Cancel</button>
+  `);
+}
+function confirmDeleteVehicle(id){
+  DATA.vehicles = DATA.vehicles.filter(v=>v.id!==id);
+  DATA.records = DATA.records.filter(r=>r.vehicleId!==id);
+  if(DATA.activeVehicleId===id) DATA.activeVehicleId = DATA.vehicles[0]?DATA.vehicles[0].id:null;
+  saveData();
+  closeSheet();
+  toast('Vehicle deleted');
+  renderVehicles();
+  renderDashboard();
+}
+
+function openVehicleDetail(id){
+  const veh = DATA.vehicles.find(v=>v.id===id);
+  const statuses = allCategoryStatuses(veh);
+  openSheet(`
+    <button class="sheet-close" onclick="closeSheet()">✕</button>
+    <div class="sheet-title">${escapeHtml(veh.name)}</div>
+    <div class="stat-row" style="margin-top:0;">
+      <div class="stat-box"><div class="lbl">Mileage</div><div class="val num">${fmtNum(veh.mileage)} km</div></div>
+      <div class="stat-box"><div class="lbl">This year</div><div class="val num">${fmtCurrency(yearlyMaintenanceCost(veh.id))}</div></div>
+    </div>
+    <div class="section-head" style="margin-top:20px;"><h4>Maintenance status</h4></div>
+    ${statuses.map(s=>{
+      const cat = CATEGORIES[s.cat];
+      const chip = s.hasData ? (s.status==='over'?'status-over':s.status==='soon'?'status-soon':'status-ok') : 'status-ok';
+      const label = s.hasData ? dueSummary(s) : 'No records yet';
+      return `<div class="up-item" style="margin-bottom:8px;">
+        <div class="up-icon" style="background:var(--surface-2);">${cat.icon}</div>
+        <div class="up-body">
+          <div class="up-title">${cat.label}</div>
+          <div class="up-sub">${label}</div>
+        </div>
+      </div>`;
+    }).join('')}
+    <button class="btn btn-ghost btn-block" style="margin-top:8px;" onclick="openAddVehicleSheet('${veh.id}')">Edit vehicle details</button>
+    <button class="btn btn-accent btn-block" style="margin-top:10px;" onclick="closeSheet();setActiveVehicle('${veh.id}');switchView('add');" >Log maintenance</button>
+  `);
+}
+
+/* ---------------- Add record ---------------- */
+let selectedCat = null;
+function renderAdd(){
+  const el = document.getElementById('addContent');
+  if(DATA.vehicles.length===0){
+    el.innerHTML = `<div class="empty"><span class="empty-icon">🚗</span><h3>Add a vehicle first</h3><p>You'll need a vehicle before logging maintenance.</p><button class="btn btn-accent" onclick="switchView('vehicles');openAddVehicleSheet();">Add a vehicle</button></div>`;
+    return;
+  }
+  selectedCat = selectedCat || 'engine_oil';
+  const veh = DATA.vehicles.find(v=>v.id===DATA.activeVehicleId) || DATA.vehicles[0];
+  el.innerHTML = `
+    <div class="screen-sub">Logging for <b style="color:var(--text)">${escapeHtml(veh.name)}</b></div>
+    <div class="cat-grid" id="catGrid">
+      ${Object.entries(CATEGORIES).map(([key,c])=>`
+        <div class="cat-opt ${key===selectedCat?'selected':''}" data-cat="${key}" onclick="pickCat('${key}')">
+          <span class="ic">${c.icon}</span>${c.label}
+        </div>`).join('')}
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Date</label>
+        <input id="r_date" type="date" value="${new Date().toISOString().slice(0,10)}">
+      </div>
+      <div class="field">
+        <label>Mileage at service</label>
+        <input id="r_mileage" type="number" inputmode="numeric" value="${veh.mileage||''}">
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Cost</label>
+        <input id="r_cost" type="number" inputmode="decimal" placeholder="0">
+      </div>
+      <div class="field">
+        <label>Workshop</label>
+        <input id="r_workshop" placeholder="e.g. Auto Care Center">
+      </div>
+    </div>
+    <div class="field">
+      <label>Notes (optional)</label>
+      <textarea id="r_notes" placeholder="Parts used, observations, next recommendation..."></textarea>
+    </div>
+    <button class="btn btn-accent btn-block" onclick="saveRecord('${veh.id}')">Save maintenance record</button>
+  `;
+}
+function pickCat(key){
+  selectedCat = key;
+  document.querySelectorAll('.cat-opt').forEach(el=>el.classList.toggle('selected', el.dataset.cat===key));
+}
+function saveRecord(vehId){
+  const date = document.getElementById('r_date').value;
+  const mileage = Number(document.getElementById('r_mileage').value)||0;
+  const cost = Number(document.getElementById('r_cost').value)||0;
+  const workshop = document.getElementById('r_workshop').value.trim();
+  const notes = document.getElementById('r_notes').value.trim();
+  if(!date){ toast('Pick a date'); return; }
+
+  DATA.records.push({ id:uid(), vehicleId:vehId, category:selectedCat, date, mileage, cost, workshop, notes });
+  const veh = DATA.vehicles.find(v=>v.id===vehId);
+  if(mileage>veh.mileage) veh.mileage = mileage;
+  saveData();
+  toast('Maintenance logged');
+  switchView('dashboard');
+  scheduleReminders();
+}
+
+/* ---------------- History ---------------- */
+let historyFilter = 'all';
+function renderHistory(){
+  const el = document.getElementById('historyContent');
+  if(DATA.vehicles.length===0){
+    el.innerHTML = `<div class="empty"><span class="empty-icon">🕘</span><h3>Nothing to show yet</h3><p>Your logged maintenance will appear here.</p></div>`;
+    return;
+  }
+  const veh = DATA.vehicles.find(v=>v.id===DATA.activeVehicleId) || DATA.vehicles[0];
+  const recs = recordsFor(veh.id, historyFilter==='all'?null:historyFilter);
+
+  let html = `<div class="hist-filter">
+    <button class="chip-btn ${historyFilter==='all'?'active':''}" onclick="setHistFilter('all')">All</button>
+    ${Object.entries(CATEGORIES).map(([k,c])=>`<button class="chip-btn ${historyFilter===k?'active':''}" onclick="setHistFilter('${k}')">${c.icon} ${c.label}</button>`).join('')}
+  </div>`;
+
+  if(recs.length===0){
+    html += `<div class="empty" style="padding:36px 16px;"><span class="empty-icon">🧾</span><h3>No records yet</h3><p>Log a service to see it here.</p></div>`;
+  }else{
+    html += recs.map(r=>{
+      const cat = CATEGORIES[r.category];
+      return `<div class="hist-item">
+        <div class="hist-top">
+          <div class="hist-cat"><span>${cat.icon}</span><span class="hist-cat-title">${cat.label}</span></div>
+          <div class="hist-cost num">${fmtCurrency(r.cost)}</div>
+        </div>
+        <div class="hist-meta">${fmtDate(r.date)} · <span class="num">${fmtNum(r.mileage)} km</span>${r.workshop?' · '+escapeHtml(r.workshop):''}</div>
+        ${r.notes?`<div class="hist-notes">${escapeHtml(r.notes)}</div>`:''}
+      </div>`;
+    }).join('');
+  }
+  el.innerHTML = html;
+}
+function setHistFilter(f){ historyFilter=f; renderHistory(); }
+
+/* ---------------- Settings ---------------- */
+function openSettings(){
+  const notifState = ('Notification' in window) ? Notification.permission : 'unsupported';
+  const veh = DATA.vehicles.find(v=>v.id===DATA.activeVehicleId);
+  openSheet(`
+    <button class="sheet-close" onclick="closeSheet()">✕</button>
+    <div class="sheet-title">Settings</div>
+
+    <div class="section-head" style="margin-top:0;"><h4>Reminders</h4></div>
+    <div class="install-tip">
+      Reminder notifications work while GearTrack is open, or running in the background after you add it to your home screen.
+      <br><br>
+      <b>Status:</b> ${notifState==='granted'?'Enabled ✅':notifState==='denied'?'Blocked in browser settings':'Not yet enabled'}
+    </div>
+    ${notifState!=='granted' ? `<button class="btn btn-accent btn-block" onclick="requestNotifPermission()">Enable notifications</button>` : `<button class="btn btn-ghost btn-block" onclick="testNotification()">Send a test reminder</button>`}
+
+    <div class="section-head"><h4>Add to home screen</h4></div>
+    <div class="install-tip">
+      In Chrome on Android, tap the <b>⋮ menu</b> → <b>Add to Home screen</b>. GearTrack will open full-screen like a regular app, and your data stays saved on this device.
+    </div>
+
+    ${veh? `
+    <div class="section-head"><h4>Maintenance intervals — ${escapeHtml(veh.name)}</h4></div>
+    <div class="install-tip">Defaults are shown. Adjust if your vehicle's manual recommends something different.</div>
+    ${Object.entries(CATEGORIES).map(([key,c])=>{
+      const iv = getIntervals(veh.id,key);
+      return `
+      <div class="field-row" style="align-items:flex-end;">
+        <div class="field" style="flex:1.2;"><label>${c.icon} ${c.label} — km</label><input type="number" id="iv_km_${key}" value="${iv.km??''}" placeholder="none"></div>
+        <div class="field"><label>months</label><input type="number" id="iv_mo_${key}" value="${iv.months??''}" placeholder="none"></div>
+      </div>`;
+    }).join('')}
+    <button class="btn btn-accent btn-block" onclick="saveIntervals('${veh.id}')">Save intervals</button>
+    `: ''}
+
+    <div class="section-head"><h4>Your data</h4></div>
+    <button class="btn btn-ghost btn-block" onclick="exportData()">Export backup (JSON)</button>
+    <button class="btn btn-danger-outline btn-block" style="margin-top:10px;" onclick="confirmWipe()">Erase all data</button>
+  `);
+}
+
+function saveIntervals(vehId){
+  const veh = DATA.vehicles.find(v=>v.id===vehId);
+  veh.intervals = veh.intervals || {};
+  Object.keys(CATEGORIES).forEach(key=>{
+    const kmEl = document.getElementById('iv_km_'+key);
+    const moEl = document.getElementById('iv_mo_'+key);
+    const km = kmEl.value===''?null:Number(kmEl.value);
+    const mo = moEl.value===''?null:Number(moEl.value);
+    veh.intervals[key] = {km, months:mo};
+  });
+  saveData();
+  closeSheet();
+  toast('Intervals updated');
+  renderDashboard();
+}
+
+function exportData(){
+  const blob = new Blob([JSON.stringify(DATA,null,2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'geartrack-backup.json';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast('Backup downloaded');
+}
+function confirmWipe(){
+  openSheet(`
+    <div class="sheet-title">Erase all data?</div>
+    <p style="color:var(--text-dim);font-size:13.5px;line-height:1.5;">This deletes every vehicle and maintenance record on this device. Export a backup first if you might need it.</p>
+    <button class="btn btn-danger-outline btn-block" onclick="wipeData()">Erase everything</button>
+    <button class="btn btn-ghost btn-block" style="margin-top:10px;" onclick="closeSheet()">Cancel</button>
+  `);
+}
+function wipeData(){
+  DATA = { vehicles:[], records:[], activeVehicleId:null, notifPromptSeen:false };
+  saveData();
+  closeSheet();
+  toast('All data erased');
+  switchView('dashboard');
+}
+
+/* ---------------- Notifications ---------------- */
+function requestNotifPermission(){
+  if(!('Notification' in window)){ toast('Notifications are not supported in this browser'); return; }
+  Notification.requestPermission().then(p=>{
+    if(p==='granted'){ toast('Reminders enabled'); scheduleReminders(); closeSheet(); openSettings(); }
+    else { toast('Permission not granted'); }
+  });
+}
+function testNotification(){
+  if(Notification.permission==='granted'){
+    new Notification('GearTrack', { body:'This is what a reminder looks like.', icon:'' });
+  }
+}
+function scheduleReminders(){
+  if(!('Notification' in window) || Notification.permission!=='granted') return;
+  DATA.vehicles.forEach(veh=>{
+    const statuses = allCategoryStatuses(veh).filter(s=>s.hasData && (s.status==='over'||s.status==='soon'));
+    statuses.forEach(s=>{
+      const key = 'notified_'+veh.id+'_'+s.cat+'_'+s.status;
+      if(!sessionStorage.getItem(key)){
+        try{
+          new Notification('GearTrack · '+veh.name, {
+            body: `${CATEGORIES[s.cat].label}: ${dueSummary(s)}`
+          });
+        }catch(e){}
+        sessionStorage.setItem(key,'1');
+      }
+    });
+  });
+}
+
+/* ---------------- Utils ---------------- */
+function escapeHtml(s){
+  return String(s||'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+/* ---------------- First-run reminder banner for notifications ---------------- */
+function maybePromptNotifications(){
+  if(DATA.notifPromptSeen) return;
+  if(!('Notification' in window)) return;
+  if(Notification.permission==='default' && DATA.vehicles.length>0){
+    // subtle, non-blocking — only via Settings, no forced popup
+  }
+}
+
+/* ---------------- Init ---------------- */
+window.addEventListener('load', ()=>{
+  renderDashboard();
+  scheduleReminders();
+});
+</script>
+</body>
+</html>
